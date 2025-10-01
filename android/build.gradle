@@ -1,4 +1,4 @@
-group = "com.orderfast.go_fun_band"
+group = "com.orderfast"
 version = "1.0-SNAPSHOT"
 
 // Load local.properties file
@@ -51,7 +51,7 @@ apply plugin: "kotlin-android"
 
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace = "com.orderfast.go_fun_band"
+        namespace = "com.orderfast"
     }
 
     compileSdk = 34

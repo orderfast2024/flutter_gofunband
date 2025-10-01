@@ -20,5 +20,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.orderfast.go_fun_band
+        package: com.orderfast
         pluginClass: GoFunBandPlugin
