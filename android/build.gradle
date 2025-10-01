@@ -42,11 +42,6 @@ allprojects {
             }
         }
 
-        maven {
-            url 'http://download.flutter.io'
-            allowInsecureProtocol=true
-        }
-
     }
 }
 
@@ -85,9 +80,6 @@ android {
 
         implementation('com.easygoband.toolkit.sdk:desktop:4.0.1')
         implementation('com.easygoband:http:4.1.2')
-
-        api "io.flutter:flutter_embedding_debug:1.0.0-f16e757d5d68c164d084b61d84e3b7cd14eacba9"
-
 
     }
 
