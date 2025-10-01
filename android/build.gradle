@@ -4,11 +4,16 @@ version = "1.0-SNAPSHOT"
 // Load local.properties file
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
+
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withInputStream { stream ->
         localProperties.load(stream)
     }
 }
+
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+
 
 buildscript {
     ext.kotlin_version = "1.8.22"
@@ -37,11 +42,17 @@ allprojects {
             }
         }
 
+        maven {
+            url 'http://download.flutter.io'
+            allowInsecureProtocol=true
+        }
+
     }
 }
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
+
 
 android {
     if (project.android.hasProperty("namespace")) {
@@ -74,6 +85,10 @@ android {
 
         implementation('com.easygoband.toolkit.sdk:desktop:4.0.1')
         implementation('com.easygoband:http:4.1.2')
+
+        api "io.flutter:flutter_embedding_debug:1.0.0-f16e757d5d68c164d084b61d84e3b7cd14eacba9"
+
+
     }
 
     testOptions {
@@ -88,3 +103,4 @@ android {
         }
     }
 }
+

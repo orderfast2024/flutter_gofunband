@@ -2,6 +2,7 @@ package com.orderfast.go_fun_band
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.NonNull
 import com.easygoband.commons.unsigned.Uint
 import com.easygoband.toolkit.sdk.bundle.components.CustomTagHandlersFactory
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
@@ -15,7 +16,6 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 import org.slf4j.Logger
 
 /** GoFunBandPlugin */
@@ -25,25 +25,23 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var context: Context
     private var logger: Logger = org.slf4j.LoggerFactory.getLogger("GoFunBandPlugin")
 
-    override fun onAttachedToEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "toolkit_flutter")
         channel.setMethodCallHandler(this)
-        context = flutterPluginBinding.applicationContext
+        context = binding.applicationContext
 
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "initialize" -> {
                 val env = call.argument<String>("environment") ?: "SANDBOX"
 
-                toolkit = initializeToolkit(env)
-
-                logger.info("Toolkit initialized")
-
-                if(toolkit) {
-                    result.success(true)
-                }else {
+                try {
+                    toolkit = initializeToolkit(env)
+                    result.success(null)
+                } catch (e: Exception) {
+                    logger.error("Error initializing toolkit: ${e.message}")
                     result.error("INIT_ERROR", "Failed to initialize toolkit", null)
                 }
             }
@@ -87,8 +85,16 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+
+        try {
+            if (toolkit.instance().isReaderAttached()) {
+                toolkit.instance().shutdown();
+            }
+        } catch (e: Exception) {
+            Log.e("GoFunBandPlugin", "Error stopping reader: ${e.message}")
+        }
     }
 
     fun initializeToolkit(env: String): Toolkit {
