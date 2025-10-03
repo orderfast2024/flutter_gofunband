@@ -23,7 +23,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private var logger: Logger = org.slf4j.LoggerFactory.getLogger("GoFunBandPlugin")
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(binding.binaryMessenger, "toolkit_flutter")
+        channel = MethodChannel(binding.binaryMessenger, "gofunband")
         channel.setMethodCallHandler(this)
         context = binding.applicationContext
 
@@ -37,6 +37,9 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        Log.d("GoFunBandPlugin", "Command" + call.method)
+        logger.info("Command" + call.method);
+
         if (call.method == "initializeToolkit") {
             val env = call.argument<String>("environment") ?: "SANDBOX"
 

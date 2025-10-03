@@ -1,16 +1,15 @@
 import 'package:flutter/services.dart';
+import 'package:go_fun_band/gofunband_method_channel.dart';
 import 'package:go_fun_band/toolkit/enums.dart';
 import 'package:go_fun_band/toolkit/models.dart';
-
-const methodChannel = MethodChannel('toolkit_flutter');
 
 typedef TagReadCallback = void Function(GoBandUser);
 typedef TagReadErrorCallback = void Function(String);
 
 /// An implementation of [GoFunBandPlatform] that uses method channels.
 class GoFunBand {
-
   static GoFunBand? _instance;
+
   static GoFunBand get instance => _instance ??= GoFunBand._();
 
   TagReadCallback? _tagReadCallback;
@@ -23,7 +22,7 @@ class GoFunBand {
   Future<void> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case "onTagRead":
-      // Handle tag read event
+        // Handle tag read event
         if (_tagReadCallback != null) {
           final userMap = call.arguments as Map<dynamic, dynamic>;
           final user = GoBandUser.fromJson(Map<String, dynamic>.from(userMap));
@@ -31,7 +30,7 @@ class GoFunBand {
         }
         break;
       case "onTagReadError":
-      // Handle tag read error event
+        // Handle tag read error event
         if (_tagReadErrorCallback != null) {
           final errorMessage = call.arguments as String;
           _tagReadErrorCallback!(errorMessage);
