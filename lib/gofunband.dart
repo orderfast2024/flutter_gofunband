@@ -1,12 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:go_fun_band/toolkit/enums.dart';
 import 'package:go_fun_band/toolkit/models.dart';
 
-import 'go_fun_band_platform_interface.dart';
+const methodChannel = MethodChannel('toolkit_flutter');
 
-
-const methodChannel = MethodChannel('go_fun_band');
+typedef TagReadCallback = void Function(GoBandUser);
+typedef TagReadErrorCallback = void Function(String);
 
 /// An implementation of [GoFunBandPlatform] that uses method channels.
 class GoFunBand {
@@ -14,7 +13,7 @@ class GoFunBand {
   TagReadCallback? _tagReadCallback;
   TagReadErrorCallback? _tagReadErrorCallback;
 
-  GoFunBand() {
+  GoFunBand._() {
     methodChannel.setMethodCallHandler(_handleMethodCall);
   }
 
