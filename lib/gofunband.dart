@@ -10,6 +10,9 @@ typedef TagReadErrorCallback = void Function(String);
 /// An implementation of [GoFunBandPlatform] that uses method channels.
 class GoFunBand {
 
+  static GoFunBand? _instance;
+  static GoFunBand get instance => _instance ??= GoFunBand._();
+
   TagReadCallback? _tagReadCallback;
   TagReadErrorCallback? _tagReadErrorCallback;
 
