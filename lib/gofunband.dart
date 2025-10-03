@@ -5,11 +5,11 @@ import 'package:go_fun_band/toolkit/models.dart';
 
 import 'go_fun_band_platform_interface.dart';
 
+
+const methodChannel = MethodChannel('go_fun_band');
+
 /// An implementation of [GoFunBandPlatform] that uses method channels.
-class GoFunBand extends GoFunBandPlatform {
-  /// The method channel used to interact with the native platform.
-  @visibleForTesting
-  final methodChannel = const MethodChannel('go_fun_band');
+class GoFunBand {
 
   TagReadCallback? _tagReadCallback;
   TagReadErrorCallback? _tagReadErrorCallback;
@@ -41,33 +41,27 @@ class GoFunBand extends GoFunBandPlatform {
     }
   }
 
-  @override
   Future<bool> initializeToolkit(GoBandEnvironment environment) async {
     return await methodChannel
         .invokeMethod('initializeToolkit', {'environment': environment.name});
   }
 
-  @override
   Future<void> configureDevice(String apiKey) async {
     await methodChannel.invokeMethod('configureDevice', {'apiKey': apiKey});
   }
 
-  @override
   Future<bool> checkAvailableReader() async {
     return await methodChannel.invokeMethod('checkAvailableReader');
   }
 
-  @override
   Future<void> syncToolkitData() async {
     await methodChannel.invokeMethod('syncToolkitData');
   }
 
-  @override
   Future<void> removeHandlers() async {
     await methodChannel.invokeMethod('removeHandlers');
   }
 
-  @override
   Future<void> startReader({
     required TagReadCallback tagReadCallback,
     required TagReadErrorCallback tagReadErrorCallback,

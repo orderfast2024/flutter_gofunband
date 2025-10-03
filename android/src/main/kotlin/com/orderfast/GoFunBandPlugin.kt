@@ -97,7 +97,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    fun initializeToolkit(env: String): Toolkit {
+    private fun initializeToolkit(env: String): Toolkit {
         val environment =
             if (env == "PRODUCTION") ToolkitBuilder.Environment.PRODUCTION else ToolkitBuilder.Environment.SANDBOX
 
@@ -107,7 +107,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             .build()
     }
 
-    fun configureDevice(apiKey: String): Boolean {
+    private fun configureDevice(apiKey: String): Boolean {
         return try {
             if (!toolkit.instance().isDeviceConfigured()) {
                 toolkit.instance().configure(apiKey)
@@ -121,7 +121,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    fun syncToolkit() {
+    private fun syncToolkit() {
         try {
             logger.info("Sync tookit..")
             toolkit.instance().sync(false, SyncTransactionsMode.DEVICE, true)
@@ -131,7 +131,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-    fun checkAvailableReader(): Boolean {
+    private fun checkAvailableReader(): Boolean {
         return if (!toolkit.instance().isReaderAttached()) {
             logger.info("Reader is not attached")
             false
