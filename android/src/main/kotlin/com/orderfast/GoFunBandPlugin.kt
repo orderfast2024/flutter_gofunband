@@ -7,12 +7,12 @@ import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
 import com.easygoband.toolkit.sdk.desktop.ToolkitBuilder
+import com.getkeepsafe.relinker.ReLinker
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.objectbox.BoxStore
 import org.slf4j.Logger
 
 /** GoFunBandPlugin */
@@ -23,6 +23,8 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private var logger: Logger = org.slf4j.LoggerFactory.getLogger("GoFunBandPlugin")
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        ReLinker.loadLibrary(context, "objectbox-jni")
+
         channel = MethodChannel(binding.binaryMessenger, "toolkit_flutter")
         channel.setMethodCallHandler(this)
         context = binding.applicationContext
