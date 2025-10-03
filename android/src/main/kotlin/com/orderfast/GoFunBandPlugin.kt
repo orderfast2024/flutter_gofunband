@@ -34,7 +34,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "initialize" -> {
+            "initializeToolkit" -> {
                 val env = call.argument<String>("environment") ?: "SANDBOX"
 
                 try {

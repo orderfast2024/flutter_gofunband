@@ -14,7 +14,7 @@ class GoFunBand extends GoFunBandPlatform {
   TagReadCallback? _tagReadCallback;
   TagReadErrorCallback? _tagReadErrorCallback;
 
-  MethodChannelGoFunBand() {
+  GoFunBand() {
     methodChannel.setMethodCallHandler(_handleMethodCall);
   }
 
