@@ -23,64 +23,56 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private var logger: Logger = org.slf4j.LoggerFactory.getLogger("GoFunBandPlugin")
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        ReLinker.loadLibrary(context, "objectbox-jni")
-
         channel = MethodChannel(binding.binaryMessenger, "toolkit_flutter")
         channel.setMethodCallHandler(this)
         context = binding.applicationContext
 
+        try {
+            ReLinker.loadLibrary(context, "objectbox-jni")
+            Log.d("GoFunBandPlugin", "objectbox-jni loaded successfully")
+        } catch (e: Exception) {
+            Log.e("GoFunBandPlugin", "Failed to load objectbox-jni", e)
+        }
+
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        when (call.method) {
-            "initializeToolkit" -> {
-                val env = call.argument<String>("environment") ?: "SANDBOX"
+        if (call.method == "initializeToolkit") {
+            val env = call.argument<String>("environment") ?: "SANDBOX"
 
-                try {
-                    toolkit = initializeToolkit(env)
-                    result.success(null)
-                } catch (e: Exception) {
-                    logger.error("Error initializing toolkit: ${e.message}")
-                    result.error("INIT_ERROR", "Failed to initialize toolkit", null)
-                }
-            }
-
-            "configureDevice" -> {
-                val apiKey = call.argument<String>("apiKey") ?: ""
-                val success = configureDevice(apiKey)
-                if (success) {
-                    result.success(null)
-                } else {
-                    result.error("CONFIGURE_ERROR", "Failed to configure device", null)
-                }
-            }
-
-            "checkAvailableReader" -> {
-                val isAvailable = checkAvailableReader()
-                if (isAvailable) {
-                    result.success(true)
-                } else {
-                    result.error("READER_NOT_AVAILABLE", "No reader is attached", null)
-                }
-            }
-
-            "syncToolkitData" -> {
-                syncToolkit()
+            try {
+                toolkit = initializeToolkit(env)
                 result.success(null)
+            } catch (e: Exception) {
+                logger.error("Error initializing toolkit: ${e.message}")
+                result.error("INIT_ERROR", "Failed to initialize toolkit", null)
             }
-
-            "removeHandlers" -> {
-                toolkit.instance().removeHandler();
+        } else if (call.method == "configureDevice") {
+            val apiKey = call.argument<String>("apiKey") ?: ""
+            val success = configureDevice(apiKey)
+            if (success) {
                 result.success(null)
+            } else {
+                result.error("CONFIGURE_ERROR", "Failed to configure device", null)
             }
-
-            "startReader" -> {
-                setTagReadHandler();
-                result.success(null)
+        } else if (call.method == "checkAvailableReader") {
+            val isAvailable = checkAvailableReader()
+            if (isAvailable) {
+                result.success(true)
+            } else {
+                result.error("READER_NOT_AVAILABLE", "No reader is attached", null)
             }
-
-
-            else -> result.notImplemented()
+        } else if (call.method == "syncToolkitData") {
+            syncToolkit()
+            result.success(null)
+        } else if (call.method == "removeHandlers") {
+            toolkit.instance().removeHandler()
+            result.success(null)
+        } else if (call.method == "startReader") {
+            setTagReadHandler()
+            result.success(null)
+        } else {
+            result.notImplemented()
         }
     }
 
@@ -94,6 +86,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         } catch (e: Exception) {
             Log.e("GoFunBandPlugin", "Error stopping reader: ${e.message}")
         }
+        Log.d("GoFunBandPlugin", "Plugin detached")
     }
 
     private fun initializeToolkit(env: String): Toolkit {
