@@ -78,11 +78,7 @@ android {
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
 
-        implementation('com.easygoband.toolkit.sdk:desktop:4.0.1')
-        implementation('com.easygoband:http:4.1.2')
-
-        implementation('com.getkeepsafe.relinker:relinker:1.4.5')
-        implementation("io.objectbox:objectbox-gradle-plugin:5.0.1")
+        implementation('com.easygoband.toolkit.sdk:android:4.0.0')
 
 
     }

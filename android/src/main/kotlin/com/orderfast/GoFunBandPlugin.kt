@@ -1,13 +1,13 @@
 package com.orderfast
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import com.easygoband.commons.unsigned.Uint
+import com.easygoband.toolkit.sdk.android.ToolkitBuilder
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
-import com.easygoband.toolkit.sdk.desktop.ToolkitBuilder
-import com.getkeepsafe.relinker.ReLinker
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -26,13 +26,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         channel = MethodChannel(binding.binaryMessenger, "gofunband")
         channel.setMethodCallHandler(this)
         context = binding.applicationContext
-
-        try {
-            ReLinker.loadLibrary(context, "objectbox-jni")
-            Log.d("GoFunBandPlugin", "objectbox-jni loaded successfully")
-        } catch (e: Exception) {
-            Log.e("GoFunBandPlugin", "Failed to load objectbox-jni", e)
-        }
 
     }
 
@@ -97,6 +90,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             if (env == "PRODUCTION") ToolkitBuilder.Environment.PRODUCTION else ToolkitBuilder.Environment.SANDBOX
 
         return ToolkitBuilder()
+            .withApplication(context as Application)
             .withEnvironment(environment)
             .withTagType(Toolkit.TagType.MIFARE_EVENT_ULTRALIGHTC)
             .build()
