@@ -56,6 +56,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         private const val METHOD_START_AUTO_SYNC = "startAutoSync"
         private const val METHOD_STOP_AUTO_SYNC = "stopAutoSync"
         private const val METHOD_SHUTDOWN = "shutdownToolkit"
+        private const val METHOD_IS_INITIALIZED = "isToolkitInitialized"
 
         // Callback method names
         private const val CALLBACK_TAG_READ = "onTagRead"
@@ -104,6 +105,8 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
                 shutdownToolkit()
                 result.success(true)
             }
+
+            METHOD_IS_INITIALIZED -> result.success(isToolkitInitialized())
 
             else -> result.notImplemented()
         }

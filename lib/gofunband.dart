@@ -201,6 +201,15 @@ class GoFunBandPlugin {
     }
   }
 
+  Future<bool> isToolkitInitialized() async {
+    try {
+      final result = await _channel.invokeMethod('isToolkitInitialized');
+      return result as bool;
+    } on PlatformException catch (e) {
+      throw GoFunBandException(e.code, e.message ?? 'Unknown error');
+    }
+  }
+
   /// Libera los recursos del plugin
   void dispose() {
     _tagReadController.close();
