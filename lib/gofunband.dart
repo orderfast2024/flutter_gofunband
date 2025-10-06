@@ -16,16 +16,20 @@ class GoFunBandException implements Exception {
 class GoFunBandPlugin {
   static const MethodChannel _channel = MethodChannel('gofunband');
 
+  static GoFunBandPlugin? _instance;
+
+  static GoFunBandPlugin get instance => _instance ??= GoFunBandPlugin._();
+
+  GoFunBandPlugin._() {
+    _channel.setMethodCallHandler(_handleMethodCall);
+  }
+
   // Streams para callbacks
   final _tagReadController = StreamController<TagUser>.broadcast();
   final _tagErrorController = StreamController<String>.broadcast();
   final _rechargeSuccessController =
       StreamController<RechargeResult>.broadcast();
   final _rechargeErrorController = StreamController<String>.broadcast();
-
-  GoFunBandPlugin() {
-    _channel.setMethodCallHandler(_handleMethodCall);
-  }
 
   /// Stream para tags leídos exitosamente
   Stream<TagUser> get onTagRead => _tagReadController.stream;
