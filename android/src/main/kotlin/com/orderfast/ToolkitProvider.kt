@@ -1,4 +1,4 @@
-package com.orderfast.workers
+package com.orderfast
 
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 

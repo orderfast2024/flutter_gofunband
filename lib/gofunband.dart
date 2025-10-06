@@ -12,7 +12,6 @@ class GoFunBandException implements Exception {
   String toString() => 'GoFunBandException($code): $message';
 }
 
-
 /// Plugin principal de GoFunBand
 class GoFunBandPlugin {
   static const MethodChannel _channel = MethodChannel('gofunband');

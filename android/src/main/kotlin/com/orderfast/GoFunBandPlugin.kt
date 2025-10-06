@@ -1,4 +1,4 @@
-package com.orderfast.gofunband
+package com.orderfast
 
 import android.app.Application
 import android.content.Context
@@ -11,7 +11,7 @@ import com.easygoband.toolkit.sdk.android.ToolkitBuilder
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
-import com.orderfast.workers.ToolkitProvider
+import com.orderfast.ToolkitProvider
 import com.orderfast.workers.ToolkitSyncWorker
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
