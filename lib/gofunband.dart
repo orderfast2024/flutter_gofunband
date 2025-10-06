@@ -203,5 +203,6 @@ class GoFunBandPlugin {
     _tagErrorController.close();
     _rechargeSuccessController.close();
     _rechargeErrorController.close();
+    _channel.invokeMethod("shutdownToolkit");
   }
 }

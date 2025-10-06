@@ -54,6 +54,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         private const val METHOD_IS_DEVICE_CONFIGURED = "isDeviceConfigured"
         private const val METHOD_START_AUTO_SYNC = "startAutoSync"
         private const val METHOD_STOP_AUTO_SYNC = "stopAutoSync"
+        private const val METHOD_SHUTDOWN = "shutdownToolkit"
 
         // Callback method names
         private const val CALLBACK_TAG_READ = "onTagRead"
@@ -98,6 +99,10 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             METHOD_IS_DEVICE_CONFIGURED -> handleIsDeviceConfigured(result)
             METHOD_START_AUTO_SYNC -> handleStartAutoSync(result)
             METHOD_STOP_AUTO_SYNC -> handleStopAutoSync(result)
+            METHOD_SHUTDOWN -> {
+                shutdownToolkit()
+                result.success(true)
+            }
             else -> result.notImplemented()
         }
     }
