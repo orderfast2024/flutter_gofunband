@@ -1,6 +1,6 @@
 name: go_fun_band
 description: "GoFun Band port"
-version: 0.2.6
+version: 0.2.7
 homepage:
 
 environment:

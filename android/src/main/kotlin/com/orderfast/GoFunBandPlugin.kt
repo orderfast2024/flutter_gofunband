@@ -11,6 +11,7 @@ import com.easygoband.toolkit.sdk.android.ToolkitBuilder
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
+import com.easygoband.toolkit.sdk.core.utils.Binary
 import com.orderfast.ToolkitProvider
 import com.orderfast.workers.ToolkitSyncWorker
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -103,6 +104,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
                 shutdownToolkit()
                 result.success(true)
             }
+
             else -> result.notImplemented()
         }
     }
@@ -414,9 +416,9 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
                     "userId" to user.tagUser.id.toString(),
                     "userBalance" to user.tagUser.balance,
                     "reference" to (user.tagUser.reference ?: ""),
-                    "tagId" to user.tagUser.tagId.toString(),
+                    "tagId" to Binary.bytesToString(user.tagUser.tagId.id),
                     "category" to (user.tagUser.category?.toInt() ?: 0),
-                    "isPaid" to (user.tagUser.tagPaid ?: false)
+                    "isPaid" to (user.tagUser.tagPaid ?: false),
                 )
 
                 channel.invokeMethod(CALLBACK_TAG_READ, userData)
