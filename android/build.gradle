@@ -78,9 +78,9 @@ android {
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
 
+        implementation "androidx.work:work-runtime-ktx:2.8.1"
+
         implementation('com.easygoband.toolkit.sdk:android:4.0.0')
-
-
     }
 
     testOptions {
