@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
+import com.orderfast.ToolkitProvider
 
 class ToolkitSyncWorker(
     context: Context,
