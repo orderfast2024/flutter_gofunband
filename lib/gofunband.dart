@@ -185,8 +185,8 @@ class GoFunBandPlugin {
   /// [reference] referencia opcional para la transacción
   Future<void> addRecharge({
     required int amount,
-    String concept = 'CASH',
-    String origin = 'Flutter',
+    String concept = 'kiosk',
+    String origin = 'OrderFast',
     String? reference,
   }) async {
     try {
@@ -209,6 +209,28 @@ class GoFunBandPlugin {
       throw GoFunBandException(e.code, e.message ?? 'Unknown error');
     }
   }
+
+  Future<bool> addRechargeToUserId({
+    required String userId,
+    required int amount,
+    String concept = 'kiosk',
+    String origin = 'OrderFast',
+    String? reference,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod('addRechargeToUserId', {
+        'userId': userId,
+        'amount': amount,
+        'concept': concept,
+        'origin': origin,
+        if (reference != null) 'reference': reference,
+      });
+      return result as bool;
+    } on PlatformException catch (e) {
+      throw GoFunBandException(e.code, e.message ?? 'Unknown error');
+    }
+  }
+
 
   /// Libera los recursos del plugin
   void dispose() {

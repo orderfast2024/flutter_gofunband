@@ -9,7 +9,9 @@ import com.easygoband.nfc.tags.reader.FeedbackType
 import com.easygoband.toolkit.commons.type.Reference
 import com.easygoband.toolkit.sdk.android.ToolkitBuilder
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
+import com.easygoband.toolkit.sdk.bundle.handlers.AddOrderToTagHandler
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
+import com.easygoband.toolkit.sdk.core.transaction.recharge.usecase.AddRecharge
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
 import com.easygoband.toolkit.sdk.core.utils.Binary
 import com.orderfast.ToolkitProvider
@@ -19,6 +21,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 /**
@@ -57,6 +60,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         private const val METHOD_STOP_AUTO_SYNC = "stopAutoSync"
         private const val METHOD_SHUTDOWN = "shutdownToolkit"
         private const val METHOD_IS_INITIALIZED = "isToolkitInitialized"
+        private const val METHOD_ADD_RECHARGE_TO_USER_ID = "addRechargeToUserId"
 
         // Callback method names
         private const val CALLBACK_TAG_READ = "onTagRead"
@@ -74,7 +78,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private lateinit var channel: MethodChannel
-    private var toolkit: Toolkit? = null
     private lateinit var context: Context
     private var isReaderActive = false
 
@@ -101,6 +104,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             METHOD_IS_DEVICE_CONFIGURED -> handleIsDeviceConfigured(result)
             METHOD_START_AUTO_SYNC -> handleStartAutoSync(result)
             METHOD_STOP_AUTO_SYNC -> handleStopAutoSync(result)
+            METHOD_ADD_RECHARGE_TO_USER_ID -> handleAddRechargeToUserId(call, result)
             METHOD_SHUTDOWN -> {
                 shutdownToolkit()
                 result.success(true)
@@ -132,10 +136,10 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         val autoSync = call.argument<Boolean>("autoSync") ?: true
 
         try {
-            toolkit = initializeToolkit(env, readerType)
+            val toolkit = initializeToolkit(env, readerType)
 
             // Guarda la referencia en el provider para el Worker
-            ToolkitProvider.setToolkit(toolkit!!)
+            ToolkitProvider.setToolkit(toolkit)
 
             // Inicia sincronización automática si está habilitada
             if (autoSync) {
@@ -208,7 +212,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             return
         }
 
-        toolkit?.instance()?.removeHandler()
+        ToolkitProvider.getToolkit()?.instance()?.removeHandler()
         isReaderActive = false
         Log.d(TAG, "Handlers removed")
         result.success(true)
@@ -243,7 +247,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             return
         }
 
-        toolkit?.instance()?.removeHandler()
+        ToolkitProvider.getToolkit()?.instance()?.removeHandler()
         isReaderActive = false
         Log.d(TAG, "Reader stopped")
         result.success(true)
@@ -303,7 +307,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             return
         }
 
-        val isConfigured = toolkit?.instance()?.isDeviceConfigured() ?: false
+        val isConfigured = ToolkitProvider.getToolkit()?.instance()?.isDeviceConfigured() ?: false
         result.success(isConfigured)
     }
 
@@ -330,6 +334,42 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping auto sync: ${e.message}", e)
             result.error("AUTO_SYNC_ERROR", "Failed to stop auto sync: ${e.message}", null)
+        }
+    }
+
+    private fun handleAddRechargeToUserId(call: MethodCall, result: Result) {
+        if (!isToolkitInitialized()) {
+            result.error(ERROR_NOT_INITIALIZED, "Toolkit not initialized", null)
+            return
+        }
+
+        val amount = call.argument<Int>("amount")
+        val concept = call.argument<String>("concept") ?: "CASH"
+        val origin = call.argument<String>("origin") ?: "OrderFast"
+        val reference = call.argument<String>("reference")
+        val userIdStr = call.argument<String>("userId")
+
+        if (amount == null || amount <= 0 || userIdStr.isNullOrEmpty()) {
+            result.error(ERROR_INVALID_PARAMS, "Invalid amount or userId", null)
+            return
+        }
+
+        try {
+            val userId = UUID.fromString(userIdStr)
+            val response = addRechargeToUserId(
+                amount = Uint(amount),
+                concept = concept,
+                origin = origin,
+                reference = reference,
+                userId = userId
+            )
+
+            Log.d(TAG, "Recharge added to user ID successfully: $response")
+
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding recharge to user ID: ${e.message}", e)
+            result.error(ERROR_RECHARGE, "Failed to add recharge: ${e.message}", null)
         }
     }
 
@@ -364,7 +404,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun configureDevice(apiKey: String): Boolean {
         return try {
-            val toolkitInstance = toolkit?.instance() ?: return false
+            val toolkitInstance = ToolkitProvider.getToolkit()?.instance() ?: return false
 
             if (!toolkitInstance.isDeviceConfigured()) {
                 toolkitInstance.configure(apiKey)
@@ -385,7 +425,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private fun syncToolkit() {
         try {
             Log.d(TAG, "Syncing toolkit data...")
-            toolkit?.instance()?.sync(false, SyncTransactionsMode.DEVICE, true)
+            ToolkitProvider.getToolkit()?.instance()?.sync(false, SyncTransactionsMode.DEVICE, true)
             Log.d(TAG, "Sync completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing toolkit data: ${e.message}", e)
@@ -396,7 +436,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      * Verifica si hay un lector NFC disponible
      */
     private fun checkAvailableReader(): Boolean {
-        val isAttached = toolkit?.instance()?.isReaderAttached() ?: false
+        val isAttached = ToolkitProvider.getToolkit()?.instance()?.isReaderAttached() ?: false
         if (!isAttached) {
             Log.d(TAG, "No reader is attached")
         }
@@ -408,10 +448,10 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun setTagReadHandler() {
         Log.d(TAG, "Setting tag read handler...")
-        val handler = toolkit?.getUserByTagHandler() ?: return
+        val handler = ToolkitProvider.getToolkit()?.getUserByTagHandler() ?: return
 
         handler.onSucceed { user ->
-            toolkit?.reader()?.sound(FeedbackType.ON_SUCCESS)
+            ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             try {
                 Log.d(TAG, "Tag read successfully - User ID: ${user.tagUser.id}")
 
@@ -433,7 +473,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
 
         handler.onError { exception ->
             Log.e(TAG, "Error reading tag: ${exception.message}", exception)
-            toolkit?.reader()?.sound(FeedbackType.ON_ERROR)
+            ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
             channel.invokeMethod(
                 CALLBACK_TAG_ERROR,
                 mapOf(
@@ -443,7 +483,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        toolkit?.instance()?.setHandler(handler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(handler)
     }
 
     /**
@@ -456,13 +496,14 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         reference: String? = null
     ) {
         Log.d(TAG, "Adding recharge handler - Amount: $amount, Concept: $concept")
-        val handler = toolkit?.addRechargeToTagHandler() ?: return
+        val handler = ToolkitProvider.getToolkit()?.addRechargeToTagHandler() ?: return
+
 
         handler.requestFetcher {
             AddRechargeToTagHandler.Request(
                 originalAmount = null,
                 currencyId = null,
-                concept = concept, // CASH, CARD, CLAIM
+                concept = concept,
                 amount = amount,
                 origin = origin,
                 attachment = null,
@@ -472,7 +513,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
 
         handler.onSucceed { response ->
-            toolkit?.reader()?.sound(FeedbackType.ON_SUCCESS)
+            ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             Log.d(TAG, "Recharge added successfully")
 
             channel.invokeMethod(
@@ -487,7 +528,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
 
         handler.onError { exception ->
             Log.e(TAG, "Error adding recharge: ${exception.message}", exception)
-            toolkit?.reader()?.sound(FeedbackType.ON_ERROR)
+            ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
 
             channel.invokeMethod(
                 CALLBACK_RECHARGE_ERROR,
@@ -498,7 +539,38 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        toolkit?.instance()?.setHandler(handler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(handler)
+    }
+
+    private fun addRechargeToUserId(
+        amount: Uint,
+        concept: String = "CASH",
+        origin: String = "OrderFast",
+        reference: String? = null,
+        userId: UUID
+    ): AddRecharge.Response {
+        Log.d(
+            TAG,
+            "Adding recharge to user ID handler - Amount: $amount, Concept: $concept, UserID: $userId"
+        )
+
+        if (ToolkitProvider.getToolkit() == null) {
+            throw Exception("Toolkit not initialized")
+        }
+
+        return ToolkitProvider.getToolkit()!!.addRechargeCommand().execute(
+            AddRecharge.Request(
+                userId = userId,
+                originalAmount = null,
+                currencyId = null,
+                concept = concept,
+                amount = amount,
+                origin = origin,
+                attachment = null,
+                operator = null,
+                reference = Reference(reference ?: "")
+            )
+        )
     }
 
     /**
@@ -548,12 +620,13 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun shutdownToolkit() {
         try {
-            if (toolkit?.instance()?.isReaderAttached() == true) {
-                toolkit?.instance()?.removeHandler()
-                toolkit?.instance()?.shutdown()
+            if (ToolkitProvider.getToolkit()?.instance()?.isReaderAttached() == true) {
+                ToolkitProvider.getToolkit()?.instance()?.removeHandler()
+                ToolkitProvider.getToolkit()?.instance()?.shutdown()
                 isReaderActive = false
                 Log.d(TAG, "Toolkit shutdown successfully")
             }
+
             ToolkitProvider.clearToolkit()
         } catch (e: Exception) {
             Log.e(TAG, "Error shutting down toolkit: ${e.message}", e)
@@ -564,6 +637,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      * Verifica si el toolkit está inicializado
      */
     private fun isToolkitInitialized(): Boolean {
-        return toolkit != null
+        return ToolkitProvider.getToolkit() != null
     }
 }
