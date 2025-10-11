@@ -11,6 +11,8 @@ import com.easygoband.toolkit.sdk.android.ToolkitBuilder
 import com.easygoband.toolkit.sdk.bundle.components.Toolkit
 import com.easygoband.toolkit.sdk.bundle.handlers.AddOrderToTagHandler
 import com.easygoband.toolkit.sdk.bundle.handlers.AddRechargeToTagHandler
+import com.easygoband.toolkit.sdk.bundle.handlers.GetUserByTagHandler
+import com.easygoband.toolkit.sdk.bundle.handlers.TagHandler
 import com.easygoband.toolkit.sdk.core.transaction.recharge.usecase.AddRecharge
 import com.easygoband.toolkit.sdk.core.transaction.transaction.data.SyncTransactionsMode
 import com.easygoband.toolkit.sdk.core.utils.Binary
@@ -80,6 +82,10 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private var isReaderActive = false
+    private lateinit var getUserByTagHandler: GetUserByTagHandler
+    private lateinit var addRechargeToTagHandler: AddRechargeToTagHandler
+    private lateinit var addOrderToTagHandler: AddOrderToTagHandler
+
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME)
@@ -212,7 +218,8 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             return
         }
 
-        ToolkitProvider.getToolkit()?.instance()?.removeHandler()
+        removeHandlers()
+
         isReaderActive = false
         Log.d(TAG, "Handlers removed")
         result.success(true)
@@ -448,9 +455,9 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun setTagReadHandler() {
         Log.d(TAG, "Setting tag read handler...")
-        val handler = ToolkitProvider.getToolkit()?.getUserByTagHandler() ?: return
+        getUserByTagHandler = ToolkitProvider.getToolkit()?.getUserByTagHandler() ?: return
 
-        handler.onSucceed { user ->
+        getUserByTagHandler.onSucceed { user ->
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             try {
                 Log.d(TAG, "Tag read successfully - User ID: ${user.tagUser.id}")
@@ -471,7 +478,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             }
         }
 
-        handler.onError { exception ->
+        getUserByTagHandler.onError { exception ->
             Log.e(TAG, "Error reading tag: ${exception.message}", exception)
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
             channel.invokeMethod(
@@ -483,7 +490,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        ToolkitProvider.getToolkit()?.instance()?.setHandler(handler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(getUserByTagHandler)
     }
 
     /**
@@ -496,10 +503,10 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         reference: String? = null
     ) {
         Log.d(TAG, "Adding recharge handler - Amount: $amount, Concept: $concept")
-        val handler = ToolkitProvider.getToolkit()?.addRechargeToTagHandler() ?: return
+        addRechargeToTagHandler = ToolkitProvider.getToolkit()?.addRechargeToTagHandler() ?: return
 
 
-        handler.requestFetcher {
+        addRechargeToTagHandler.requestFetcher {
             AddRechargeToTagHandler.Request(
                 originalAmount = null,
                 currencyId = null,
@@ -512,7 +519,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        handler.onSucceed { response ->
+        addRechargeToTagHandler.onSucceed { response ->
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             Log.d(TAG, "Recharge added successfully")
 
@@ -526,7 +533,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        handler.onError { exception ->
+        addRechargeToTagHandler.onError { exception ->
             Log.e(TAG, "Error adding recharge: ${exception.message}", exception)
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
 
@@ -539,7 +546,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        ToolkitProvider.getToolkit()?.instance()?.setHandler(handler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(addRechargeToTagHandler)
     }
 
     private fun addRechargeToUserId(
@@ -621,12 +628,14 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     private fun shutdownToolkit() {
         try {
             if (ToolkitProvider.getToolkit()?.instance()?.isReaderAttached() == true) {
-                ToolkitProvider.getToolkit()?.instance()?.removeHandler()
-                ToolkitProvider.getToolkit()?.instance()?.shutdown()
+                removeHandlers()
+
                 isReaderActive = false
                 Log.d(TAG, "Toolkit shutdown successfully")
             }
 
+
+            ToolkitProvider.getToolkit()?.instance()?.shutdown()
             ToolkitProvider.clearToolkit()
         } catch (e: Exception) {
             Log.e(TAG, "Error shutting down toolkit: ${e.message}", e)
@@ -638,5 +647,14 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun isToolkitInitialized(): Boolean {
         return ToolkitProvider.getToolkit() != null
+    }
+
+    private fun removeHandlers() {
+        if (isReaderActive) {
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(getUserByTagHandler)
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addOrderToTagHandler)
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addRechargeToTagHandler)
+            Log.d(TAG, "Handlers removed")
+        }
     }
 }
