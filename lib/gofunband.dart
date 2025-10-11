@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:flutter/services.dart';
 import 'package:go_fun_band/toolkit/models.dart';
 
@@ -12,6 +13,11 @@ class GoFunBandException implements Exception {
   String toString() => 'GoFunBandException($code): $message';
 }
 
+typedef TagReadCallback = void Function(TagUser user);
+typedef TagErrorCallback = void Function(String error);
+typedef RechargeSuccessCallback = void Function(RechargeResult result);
+typedef RechargeErrorCallback = void Function(String error);
+
 /// Plugin principal de GoFunBand
 class GoFunBandPlugin {
   static const MethodChannel _channel = MethodChannel('gofunband');
@@ -24,50 +30,35 @@ class GoFunBandPlugin {
     _channel.setMethodCallHandler(_handleMethodCall);
   }
 
-  // Streams para callbacks
-  final _tagReadController = StreamController<TagUser>.broadcast();
-  final _tagErrorController = StreamController<String>.broadcast();
-  final _rechargeSuccessController =
-      StreamController<RechargeResult>.broadcast();
-  final _rechargeErrorController = StreamController<String>.broadcast();
-
-  /// Stream para tags leídos exitosamente
-  Stream<TagUser> get onTagRead => _tagReadController.stream;
-
-  /// Stream para errores de lectura de tags
-  Stream<String> get onTagError => _tagErrorController.stream;
-
-  /// Stream para recargas exitosas
-  Stream<RechargeResult> get onRechargeSuccess =>
-      _rechargeSuccessController.stream;
-
-  /// Stream para errores de recarga
-  Stream<String> get onRechargeError => _rechargeErrorController.stream;
+  TagReadCallback? _onTagRead;
+  TagErrorCallback? _onTagReadError;
+  RechargeSuccessCallback? _onRechargeSuccess;
+  RechargeErrorCallback? _onRechargeError;
 
   Future<void> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'onTagRead':
         final user = TagUser.fromMap(call.arguments as Map);
-        _tagReadController.add(user);
+        _onTagRead?.call(user);
         break;
 
       case 'onTagReadError':
         final error = call.arguments is Map
             ? call.arguments['error'] as String
             : call.arguments.toString();
-        _tagErrorController.add(error);
+        _onTagReadError?.call(error);
         break;
 
       case 'onRechargeSuccess':
         final result = RechargeResult.fromMap(call.arguments as Map);
-        _rechargeSuccessController.add(result);
+        _onRechargeSuccess?.call(result);
         break;
 
       case 'onRechargeError':
         final error = call.arguments is Map
             ? call.arguments['error'] as String
             : call.arguments.toString();
-        _rechargeErrorController.add(error);
+        _onRechargeError?.call(error);
         break;
     }
   }
@@ -151,8 +142,13 @@ class GoFunBandPlugin {
   }
 
   /// Inicia el lector de tags
-  Future<void> startReader() async {
+  Future<void> startReader({
+    TagReadCallback? onTagRead,
+    TagErrorCallback? onTagReadError,
+  }) async {
     try {
+      _onTagRead = onTagRead;
+      _onTagReadError = onTagReadError;
       await _channel.invokeMethod('startReader');
     } on PlatformException catch (e) {
       throw GoFunBandException(e.code, e.message ?? 'Unknown error');
@@ -162,6 +158,8 @@ class GoFunBandPlugin {
   /// Detiene el lector de tags
   Future<void> stopReader() async {
     try {
+      _onTagRead = null;
+      _onTagReadError = null;
       await _channel.invokeMethod('stopReader');
     } on PlatformException catch (e) {
       throw GoFunBandException(e.code, e.message ?? 'Unknown error');
@@ -171,6 +169,10 @@ class GoFunBandPlugin {
   /// Remueve todos los handlers activos
   Future<void> removeHandlers() async {
     try {
+      _onTagRead = null;
+      _onTagReadError = null;
+      _onRechargeSuccess = null;
+      _onRechargeError = null;
       await _channel.invokeMethod('removeHandlers');
     } on PlatformException catch (e) {
       throw GoFunBandException(e.code, e.message ?? 'Unknown error');
@@ -188,8 +190,12 @@ class GoFunBandPlugin {
     String concept = 'kiosk',
     String origin = 'OrderFast',
     String? reference,
+    RechargeSuccessCallback? onRechargeSuccess,
+    RechargeErrorCallback? onRechargeError,
   }) async {
     try {
+      _onRechargeSuccess = onRechargeSuccess;
+      _onRechargeError = onRechargeError;
       await _channel.invokeMethod('addRecharge', {
         'amount': amount,
         'concept': concept,
@@ -231,13 +237,12 @@ class GoFunBandPlugin {
     }
   }
 
-
   /// Libera los recursos del plugin
   void dispose() {
-    _tagReadController.close();
-    _tagErrorController.close();
-    _rechargeSuccessController.close();
-    _rechargeErrorController.close();
+    _onTagRead = null;
+    _onTagReadError = null;
+    _onRechargeSuccess = null;
+    _onRechargeError = null;
     _channel.invokeMethod("shutdownToolkit");
   }
 }
