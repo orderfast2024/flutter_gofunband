@@ -81,7 +81,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
-    private var isReaderActive = false
     private lateinit var getUserByTagHandler: GetUserByTagHandler
     private lateinit var addRechargeToTagHandler: AddRechargeToTagHandler
     private lateinit var addOrderToTagHandler: AddOrderToTagHandler
@@ -219,8 +218,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
 
         removeHandlers()
-
-        isReaderActive = false
         Log.d(TAG, "Handlers removed")
         result.success(true)
     }
@@ -240,7 +237,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
 
         setTagReadHandler()
-        isReaderActive = true
         Log.d(TAG, "Reader started")
         result.success(true)
     }
@@ -255,7 +251,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         }
 
         ToolkitProvider.getToolkit()?.instance()?.removeHandler()
-        isReaderActive = false
         Log.d(TAG, "Reader stopped")
         result.success(true)
     }
@@ -630,7 +625,6 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             if (ToolkitProvider.getToolkit()?.instance()?.isReaderAttached() == true) {
                 removeHandlers()
 
-                isReaderActive = false
                 Log.d(TAG, "Toolkit shutdown successfully")
             }
 
@@ -650,11 +644,9 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun removeHandlers() {
-        if (isReaderActive) {
-            ToolkitProvider.getToolkit()?.instance()?.removeHandler(getUserByTagHandler)
-            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addOrderToTagHandler)
-            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addRechargeToTagHandler)
-            Log.d(TAG, "Handlers removed")
-        }
+        ToolkitProvider.getToolkit()?.instance()?.removeHandler(getUserByTagHandler)
+        ToolkitProvider.getToolkit()?.instance()?.removeHandler(addOrderToTagHandler)
+        ToolkitProvider.getToolkit()?.instance()?.removeHandler(addRechargeToTagHandler)
+        Log.d(TAG, "Handlers removed")
     }
 }
