@@ -81,9 +81,9 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
-    private lateinit var getUserByTagHandler: GetUserByTagHandler
-    private lateinit var addRechargeToTagHandler: AddRechargeToTagHandler
-    private lateinit var addOrderToTagHandler: AddOrderToTagHandler
+    private var getUserByTagHandler: GetUserByTagHandler? = null
+    private var addRechargeToTagHandler: AddRechargeToTagHandler? = null
+    private var addOrderToTagHandler: AddOrderToTagHandler? = null
 
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -452,7 +452,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         Log.d(TAG, "Setting tag read handler...")
         getUserByTagHandler = ToolkitProvider.getToolkit()?.getUserByTagHandler() ?: return
 
-        getUserByTagHandler.onSucceed { user ->
+        getUserByTagHandler!!.onSucceed { user ->
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             try {
                 Log.d(TAG, "Tag read successfully - User ID: ${user.tagUser.id}")
@@ -473,7 +473,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             }
         }
 
-        getUserByTagHandler.onError { exception ->
+        getUserByTagHandler!!.onError { exception ->
             Log.e(TAG, "Error reading tag: ${exception.message}", exception)
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
             channel.invokeMethod(
@@ -485,7 +485,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        ToolkitProvider.getToolkit()?.instance()?.setHandler(getUserByTagHandler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(getUserByTagHandler!!)
     }
 
     /**
@@ -501,7 +501,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
         addRechargeToTagHandler = ToolkitProvider.getToolkit()?.addRechargeToTagHandler() ?: return
 
 
-        addRechargeToTagHandler.requestFetcher {
+        addRechargeToTagHandler!!.requestFetcher {
             AddRechargeToTagHandler.Request(
                 originalAmount = null,
                 currencyId = null,
@@ -514,7 +514,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        addRechargeToTagHandler.onSucceed { response ->
+        addRechargeToTagHandler!!.onSucceed { response ->
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_SUCCESS)
             Log.d(TAG, "Recharge added successfully")
 
@@ -528,7 +528,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        addRechargeToTagHandler.onError { exception ->
+        addRechargeToTagHandler!!.onError { exception ->
             Log.e(TAG, "Error adding recharge: ${exception.message}", exception)
             ToolkitProvider.getToolkit()?.reader()?.sound(FeedbackType.ON_ERROR)
 
@@ -541,7 +541,7 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
             )
         }
 
-        ToolkitProvider.getToolkit()?.instance()?.setHandler(addRechargeToTagHandler)
+        ToolkitProvider.getToolkit()?.instance()?.setHandler(addRechargeToTagHandler!!)
     }
 
     private fun addRechargeToUserId(
@@ -644,9 +644,13 @@ class GoFunBandPlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun removeHandlers() {
-        ToolkitProvider.getToolkit()?.instance()?.removeHandler(getUserByTagHandler)
-        ToolkitProvider.getToolkit()?.instance()?.removeHandler(addOrderToTagHandler)
-        ToolkitProvider.getToolkit()?.instance()?.removeHandler(addRechargeToTagHandler)
+        if (getUserByTagHandler != null)
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(getUserByTagHandler)
+        if (addOrderToTagHandler != null)
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addOrderToTagHandler)
+        if (addRechargeToTagHandler != null)
+            ToolkitProvider.getToolkit()?.instance()?.removeHandler(addRechargeToTagHandler)
+
         Log.d(TAG, "Handlers removed")
     }
 }
